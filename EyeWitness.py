@@ -664,8 +664,8 @@ def default_creds(page_content, full_file_path):
 
 def file_names(url_given):
     pic_name = url_given.replace("://", ".")
-    pic_name = pic_name.replace(":", ".")
-    pic_name = pic_name.replace("/", "")
+    for char in [':', '/', '?', '=', '%', '+']:
+        pic_name = pic_name.replace(char, '.')
     src_name = pic_name + ".txt"
     pic_name = pic_name + ".png"
     return src_name, pic_name

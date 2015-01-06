@@ -1268,7 +1268,7 @@ def create_table_entry(html_dictionary, request_object,
             pagesource = source.read()
             titletag = title_regex.search(pagesource)
             if titletag:
-                pagetitle = titletag.groups()[1]
+                pagetitle = titletag.groups()[1].strip()
             else:
                 pagetitle = "Unknown"
     else:
@@ -2940,7 +2940,7 @@ if __name__ == "__main__":
                                 # URL (screenshot, server headers,
                                 # etc.)
                                 htmldictionary = create_table_entry(
-                                    htmldictionary, web_request_object,
+                                    htmldictionary, new_web_request_object,
                                     content_blank, log_file_path,
                                     browser_key, user_agent_value,
                                     source_name, picture_name,
@@ -2995,6 +2995,11 @@ if __name__ == "__main__":
                         jitter_wit_it(cli_parsed)
                     selenium_object.close()
                 selenium_object.close()
+
+#            for i in htmldictionary.items():
+#                print i
+#                print i[1][0]
+
             tosort = htmldictionary.items()
             groupedlist = []
             # Work our way from the back of the list and find similar elements.

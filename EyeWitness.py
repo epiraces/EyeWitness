@@ -666,6 +666,12 @@ def default_creds(page_content, full_file_path):
         return None
 
 
+def exit_message(output_obj):
+    print "\n[*] Done! Check out the report in the " +\
+        output_obj.report_folder + " folder!"
+    return
+
+
 def file_names(url_given):
     pic_name = url_given.replace("://", ".")
     for char in [':', '/', '?', '=', '%', '+']:
@@ -773,9 +779,7 @@ def ghost_cleanup(ghost_obj, output_obj, the_log_path):
         # Stupid windows won't let me delete the log file
         pass
     else:
-        os.system('rm ' + the_log_path)
-    print "\n[*] Done! Check out the report in the " +\
-        output_obj.report_folder + " folder!"
+        os.remove(the_log_path)
     return
 
 
@@ -1659,9 +1663,9 @@ def title_screen():
         os.system('cls')
     else:
         os.system('clear')
-    print "################################################################################"
-    print "#                                  EyeWitness                                  #"
-    print "################################################################################\n"
+    print "#" * 80
+    print "#" + " " * 34 + "EyeWitness" + " " * 34 + "#"
+    print "#" * 80 + "\n"
 
     python_info = sys.version_info
     if python_info[0] is not 2 or python_info[1] < 7:
@@ -2156,6 +2160,8 @@ if __name__ == "__main__":
 
             ghost_cleanup(ghost_object, ew_output_object, log_file_path)
 
+            exit_message(ew_output_object)
+
         # This hits when not using a single site, but likely providing
         # a file for input
         elif cli_parsed.f is not "None":
@@ -2501,6 +2507,8 @@ if __name__ == "__main__":
 
             ghost_cleanup(ghost_object, ew_output_object, log_file_path)
 
+            exit_message(exit_message)
+
         # This should only be hit if not doing any web scans
         else:
             pass
@@ -2715,17 +2723,15 @@ if __name__ == "__main__":
             create_link_structure(
                 page_counter, ew_output_object, web_index, "web")
 
-            # Kill xvfb session if started
-            #if hasattr(ghost_object, 'xvfb'):
-            #    ghost_object.xvfb.terminate()
-
             if ew_output_object.operating_system == "Windows":
                 # Stupid windows won't let me delete the log file
                 pass
             else:
-                os.system('rm ' + log_file_path)
-            print "\n[*] Done! Check out the report in the " +\
-                ew_output_object.report_folder + " folder!"
+                os.remove(log_file_path)
+
+            selenium_object.close()
+
+            exit_message(ew_output_object)
 
         elif cli_parsed.f is not "None":
 
@@ -2799,21 +2805,25 @@ if __name__ == "__main__":
 
                     # Skip a url if Ctrl-C is hit
                     except KeyboardInterrupt:
-                        print "[*] Skipping: " + url
-                        web_index += """<tr>
-                        <td><a href=\"{single_given_url}\">{single_given_url}</a></td>
-                        <td>User Skipped this URL</td>
-                        </tr>
-                        """.format(single_given_url=url).replace('    ', '')
-                    # Catch timeout warning
-                    except TimeoutException:
-                        print "[*] Hit timeout limit when connecting to: " + url
-                        web_index += """<tr>
-                        <td><a href=\"{single_timeout_url}\" target=\"_blank\">\
-                        {single_timeout_url}</a></td>
+                        print "hitting here"
+                        print "[*] Hit timeout limit when connecting to: "\
+                            + url
+                        htmldictionary[url] = ('Unknown', """<tr>
+                        <td><a href=\"{single_timeout_url}\" target=\"_blank\"\
+                        >{single_timeout_url}</a></td>
                         <td>Hit timeout limit while attempting screenshot</td>
                         </tr>
-                        """.format(single_timeout_url=url)
+                        """.format(single_timeout_url=url))
+                    # Catch timeout warning
+                    except TimeoutException:
+                        print "[*] Hit timeout limit when connecting to: "\
+                            + url
+                        htmldictionary[url] = ('Unknown', """<tr>
+                        <td><a href=\"{single_timeout_url}\" target=\"_blank\"\
+                        >{single_timeout_url}</a></td>
+                        <td>Hit timeout limit while attempting screenshot</td>
+                        </tr>
+                        """.format(single_timeout_url=url))
 
                     # Set up sleep if requested
                     jitter_wit_it(cli_parsed)
@@ -3052,7 +3062,16 @@ if __name__ == "__main__":
 
             create_link_structure(page_counter, ew_output_object, web_index, "web")
 
+            if ew_output_object.operating_system == "Windows":
+                # Stupid windows won't let me delete the log file
+                pass
+            else:
+                os.remove(log_file_path)
+
             selenium_object.close()
+
+            exit_message(ew_output_object)
+
         # This hits when not using a single site, but likely providing
         # a file for input
         else:

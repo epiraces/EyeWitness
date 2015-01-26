@@ -243,6 +243,9 @@ def create_selenium_driver(cli_parsed, user_agent=None):
 
 def create_link_structure(
         number_of_pages, output_obj, report_out_html, proto):
+
+    print number_of_pages
+
     if number_of_pages == 1:
         single_report_page(
             report_out_html, output_obj.eyewitness_path,
@@ -899,14 +902,15 @@ def screenshot_rdp(width, height, rdp_hosts, output_obj, rdp_report,
 
             reactor.connectTCP(
                 ip_rdp, int(port_rdp), RDPScreenShotFactory(
-                    width, height, rdp_object.rdp_screenshot_path, timeout,
-                    reactor, app))
+                    reactor, app, width, height,
+                    rdp_object.rdp_screenshot_path, timeout))
 
             rdp_report = screenshot_to_report(
                 rdp_report, rdp_object)
 
             # This code block determines when to split each group of hosts
             # off into a new page
+
             if (rdp_counter % command_line_object.results == 0 or
                     rdp_counter == len(rdp_hosts)):
                 if total_pages == 0:
@@ -937,7 +941,6 @@ def screenshot_rdp(width, height, rdp_hosts, output_obj, rdp_report,
 
                     # Reset the URL counter
                     if rdp_counter != len(rdp_hosts):
-                        total_pages = total_pages + 1
                         rdp_report = vnc_rdp_header(report_date, report_time)
 
     else:
@@ -3018,8 +3021,6 @@ if __name__ == "__main__":
                 rdp_request_object, rdp_report_html, page_counter = screenshot_rdp(
                     width, height, rdp_list, ew_output_object, rdp_report_html,
                     None, cli_parsed)
-
-        print page_counter
 
         # Write out the report for the single URL
         create_link_structure(

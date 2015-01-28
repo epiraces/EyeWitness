@@ -154,7 +154,7 @@ class RFBScreenShotFactory(rfb.ClientFactory):
     """
     __INSTANCE__ = 0
 
-    def __init__(self, password, path):
+    def __init__(self, password, path, reactor, app):
         """
         @param password: password for VNC authentication
         @param path: path of output screenshot
@@ -162,6 +162,8 @@ class RFBScreenShotFactory(rfb.ClientFactory):
         RFBScreenShotFactory.__INSTANCE__ += 1
         self._path = path
         self._password = password
+        self._reactor = reactor
+        self._app = app
 
     def clientConnectionLost(self, connector, reason):
         """
@@ -171,8 +173,8 @@ class RFBScreenShotFactory(rfb.ClientFactory):
         """
         RFBScreenShotFactory.__INSTANCE__ -= 1
         if(RFBScreenShotFactory.__INSTANCE__ == 0):
-            reactor.stop()
-            app.exit()
+            self._reactor.stop()
+            self._app.exit()
 
     def clientConnectionFailed(self, connector, reason):
         """
@@ -182,8 +184,8 @@ class RFBScreenShotFactory(rfb.ClientFactory):
         """
         RFBScreenShotFactory.__INSTANCE__ -= 1
         if(RFBScreenShotFactory.__INSTANCE__ == 0):
-            reactor.stop()
-            app.exit()
+            self._reactor.stop()
+            self._app.exit()
 
     def buildObserver(self, controller, addr):
         """
@@ -331,15 +333,12 @@ def create_selenium_driver(cli_parsed, user_agent=None):
         profile.set_preference('network.proxy.ssl_port', cli_parsed.proxy_port)
 
     driver = webdriver.Firefox(profile)
-    #driver.maximize_window()
     driver.set_page_load_timeout(cli_parsed.t)
     return driver
 
 
 def create_link_structure(
         number_of_pages, output_obj, report_out_html, proto):
-
-    print number_of_pages
 
     if number_of_pages == 1:
         single_report_page(
@@ -467,8 +466,11 @@ def cli_parser(output_obj):
 
     protocols = parser.add_argument_group('Protocol Options')
     protocols.add_argument(
-        "--web", default="None", metavar="[ghost] or [selenium]",
-        help="Select the web screenshot library to use.")
+        "--web", default=False, action='store_true',
+        help="Uses Selenium, best for stability")
+    protocols.add_argument(
+        "--headless", default=False, action='store_true',
+        help='Headlessly grabs web screenshots, not as stable as --web')
     protocols.add_argument("--rdp", default=False, action='store_true',
                            help="Screenshot RDP services!")
     protocols.add_argument("--vnc", default=False, action='store_true',
@@ -610,7 +612,7 @@ def cli_parser(output_obj):
         parser.print_help()
         sys.exit()
 
-    if args.web is "None" and args.vnc is False and args.rdp is False and\
+    if args.web is False and args.vnc is False and args.rdp is False and\
             args.all_protocols is False:
         print "[*] Error: You didn't give me an action to perform."
         print "[*] Error: Please use --web, --rdp, or --vnc!\n"
@@ -618,7 +620,7 @@ def cli_parser(output_obj):
         sys.exit()
 
     if args.all_protocols:
-        args.web = "selenium"
+        args.web = True
         args.vnc = True
         args.vnc = True
 
@@ -942,15 +944,15 @@ def screenshot_rdp(width, height, rdp_hosts, output_obj, rdp_report,
     rdp_counter = 0
     total_pages = 0
 
-    #default script argument
+    # default script argument
     width = 1024
     height = 800
     timeout = 5.0
 
-    #create application
+    # create application
     app = QtGui.QApplication(sys.argv)
 
-    #add qt4 reactor
+    # add qt4 reactor
     import qt4reactor
     qt4reactor.install()
     from twisted.internet import reactor
@@ -1053,10 +1055,10 @@ def screenshot_vnc(width, height, vnc_hosts, output_obj, vnc_report,
     vnc_counter = 0
     total_pages_vnc = 0
 
-    #create application
+    # create application
     app = QtGui.QApplication(sys.argv)
 
-    #add qt4 reactor
+    # add qt4 reactor
     import qt4reactor
     qt4reactor.install()
     from twisted.internet import reactor
@@ -1902,7 +1904,7 @@ if __name__ == "__main__":
         vnc_list = None
 
     # If screenshotting websites and using ghost to do it...
-    if cli_parsed.web.lower() == "ghost":
+    if cli_parsed.headless:
 
         # Change log path if full path is given for output directory
         if cli_parsed.d.startswith('/') or cli_parsed.d.startswith("C:\\"):
@@ -2524,7 +2526,7 @@ if __name__ == "__main__":
         else:
             pass
 
-    elif cli_parsed.web.lower() == "selenium":
+    elif cli_parsed.web:
 
         # Change log path if full path is given for output directory
         if cli_parsed.d.startswith('/') or re.match('[A-Za-z]:', cli_parsed.d):
@@ -2762,8 +2764,16 @@ if __name__ == "__main__":
             url_counter = 0
             selenium_object = create_selenium_driver(cli_parsed)
             source_table = {}
+            new_webdriver = 0
             # Loop through all URLs and create a screenshot
             for url in url_list:
+
+                new_webdriver += 1
+
+                if new_webdriver == 250:
+                    selenium_object.close()
+                    selenium_object = create_selenium_driver(cli_parsed)
+                    new_webdriver = 0
 
                 # Create the request object that will be passed around
                 web_request_object = request_object.RequestObject()
@@ -2779,7 +2789,6 @@ if __name__ == "__main__":
                 # Create the filename to store each website's picture
                 source_name, picture_name = file_names(
                     web_request_object.remote_system)
-
 
                 if cli_parsed.cycle is None:
                     url_counter += 1

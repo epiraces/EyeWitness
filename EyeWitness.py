@@ -613,7 +613,7 @@ def cli_parser(output_obj):
         sys.exit()
 
     if args.web is False and args.vnc is False and args.rdp is False and\
-            args.all_protocols is False:
+            args.all_protocols is False and args.headless is False:
         print "[*] Error: You didn't give me an action to perform."
         print "[*] Error: Please use --web, --rdp, or --vnc!\n"
         parser.print_help()
@@ -2577,7 +2577,6 @@ if __name__ == "__main__":
 
                 try:
                     web_request_object = selenium_capture(selenium_object, web_request_object, picture_name, ew_output_object, source_name)
-                    selenium_object.close()
                     # Create the table info for the single URL (screenshot,
                     # server headers, etc.)
                     web_index = table_maker(

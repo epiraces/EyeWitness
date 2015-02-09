@@ -1174,11 +1174,14 @@ def selenium_capture(selenium_object, requesting_object, screen_name, output_obj
         report_file = join(output_obj.eyewitness_path, output_obj.report_folder, "source",
                            source_code_name)
 
-    headers = dict(urllib2.urlopen(requesting_object.return_remote_system_address()).info())
+    try:
+        headers = dict(urllib2.urlopen(requesting_object.return_remote_system_address()).info())
+    except urllib2.HTTPError:
+        headers = {"Error": "Error when grabbing web server headers..."}
 
     selenium_object.save_screenshot(capture_path)
     requesting_object.set_web_response_attributes(selenium_object.page_source.encode('utf-8'), headers, capture_path)
-    
+
     with open(report_file, 'w') as source:
         source.write(requesting_object.web_source_code)
 
@@ -2520,7 +2523,7 @@ if __name__ == "__main__":
 
             ghost_cleanup(ghost_object, ew_output_object, log_file_path)
 
-            exit_message(exit_message)
+            exit_message(ew_output_object)
 
         # This should only be hit if not doing any web scans
         else:

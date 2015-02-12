@@ -38,6 +38,7 @@ case ${osinfo} in
     echo '[*] Cloning and installing rdpy'
     git clone https://github.com/ChrisTruncer/rdpy.git
     cd rdpy
+    git checkout -B hotfix origin/hotfix
     python setup.py install
     cd ..
     rm -rf rdpy
@@ -60,6 +61,7 @@ case ${osinfo} in
     echo '[*] Cloning and installing rdpy'
     git clone https://github.com/ChrisTruncer/rdpy.git
     cd rdpy
+    git checkout -B hotfix origin/hotfix
     python setup.py install
     cd ..
     rm -rf rdpy
@@ -82,6 +84,7 @@ case ${osinfo} in
     echo '[*] Cloning and installing rdpy'
     git clone https://github.com/ChrisTruncer/rdpy.git
     cd rdpy
+    git checkout -B hotfix origin/hotfix
     python setup.py install
     cd ..
     rm -rf rdpy
@@ -113,6 +116,7 @@ case ${osinfo} in
     echo '[*] Cloning and installing rdpy'
     git clone https://github.com/ChrisTruncer/rdpy.git
     cd rdpy
+    git checkout -B hotfix origin/hotfix
     python setup.py install
     cd ..
     rm -rf rdpy

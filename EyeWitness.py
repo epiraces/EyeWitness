@@ -557,7 +557,7 @@ def cli_parser(output_obj):
                         print "Quitting... Restart and provide the \
                         proper directory to write to.".replace('    ', '')
                         sys.exit()
-                    elif overwrite_dir == "y":
+                    elif overwrite_dir.lower().strip() == "y":
                         pass
                     else:
                         print "Quitting since you didn't provide a valid\
@@ -739,6 +739,8 @@ def folder_out(dir_name, output_obj):
         if not os.path.isdir(output_folder_name):
             os.makedirs(join(output_folder_name, "screens"))
             os.makedirs(join(output_folder_name, "source"))
+        with open(join(output_folder_name, "style.css"), 'w') as css_file:
+            css_file.write(css_page)
 
     # If it doesn't start with a "/" or "C:\", then assume it should be in the
     # same directory as EyeWitness.
@@ -750,8 +752,8 @@ def folder_out(dir_name, output_obj):
             os.makedirs(join(full_path, "screens"))
             os.makedirs(join(full_path, "source"))
 
-    with open(join(output_folder_name, "style.css"), 'w') as css_file:
-        css_file.write(css_page)
+        with open(join(full_path, "style.css"), 'w') as css_file:
+            css_file.write(css_page)
 
     output_obj.set_report_folder(output_folder_name)
 
@@ -773,7 +775,8 @@ def ghost_capture(incoming_ghost_object, requesting_object,
             output_obj.eyewitness_path, output_obj.report_folder,
             "screens", screen_name)
     else:
-        capture_path = join(output_obj.report_folder, "screens", screen_name)
+        ew_path = os.path.dirname(os.path.abspath(__file__))
+        capture_path = join(ew_path, output_obj.report_folder, "screens", screen_name)
 
     incoming_ghost_object.capture_to(capture_path)
 
@@ -1166,7 +1169,8 @@ def selenium_capture(selenium_object, requesting_object, screen_name, output_obj
             output_obj.eyewitness_path, output_obj.report_folder,
             "screens", screen_name)
     else:
-        capture_path = join(output_obj.report_folder, "screens", screen_name)
+        ew_path = os.path.dirname(os.path.abspath(__file__))
+        capture_path = join(ew_path, output_obj.report_folder, "screens", screen_name)
 
     if output_obj.report_folder.startswith("/") or output_obj.report_folder.startswith("C:\\"):
         report_file = join(output_obj.report_folder, "source", source_code_name)
@@ -1916,7 +1920,8 @@ if __name__ == "__main__":
                                  ew_output_object.report_folder, "logfile.log")
         else:
             # Location of the log file Ghost logs to (to catch SSL errors)
-            log_file_path = join(ew_output_object.report_folder, "logfile.log")
+            eyew_path = os.path.dirname(os.path.abspath(__file__))
+            log_file_path = join(eyew_path, ew_output_object.report_folder, "logfile.log")
 
         # If the user wants to cycle through user agents, return the
         # disctionary of applicable user agents
@@ -2538,7 +2543,8 @@ if __name__ == "__main__":
                                  ew_output_object.report_folder, "logfile.log")
         else:
             # Location of the log file Ghost logs to (to catch SSL errors)
-            log_file_path = join(ew_output_object.report_folder, "logfile.log")
+            eyewitness_directory = os.path.dirname(os.path.abspath(__file__))
+            log_file_path = join(eyewitness_directory, ew_output_object.report_folder, "logfile.log")
 
         # If the user wants to cycle through user agents, return the
         # disctionary of applicable user agents

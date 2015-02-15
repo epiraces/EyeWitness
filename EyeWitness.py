@@ -1065,7 +1065,7 @@ def screenshot_vnc(width, height, vnc_hosts, output_obj, vnc_report,
     import qt4reactor
     qt4reactor.install()
     from twisted.internet import reactor
-    password = "password"
+    password = ""
 
     if single_vnc is not None:
 
@@ -1499,8 +1499,8 @@ def target_creator(command_line_object):
         # Setup variables
         # The nmap xml parsing code was sent to me and worked on by Jason Hill
         # (@jasonhillva)
-        http_ports = [80, 8000, 8080, 8081, 8082]
-        https_ports = [443, 8443]
+        http_ports = [80, 8000, 8080, 8081, 8082, 8888]
+        https_ports = [443, 8443, 9443]
         rdp_port = [3389]
         vnc_ports = [5900, 5901]
 
@@ -1511,7 +1511,8 @@ def target_creator(command_line_object):
             sys.exit()
         root = xml_tree.getroot()
 
-        if root.tag.lower() == "nmaprun":
+        if root.tag.lower() == "nmaprun" and root.attrib.get('scanner') == 'nmap':
+            print "Detected nmap xml file\n"
             for item in root.iter('host'):
                 check_ip_address = False
                 # We only want hosts that are alive
@@ -1594,12 +1595,68 @@ def target_creator(command_line_object):
                 sys.exit()
             return urls, rdp, vnc
 
+        # Added section for parsing masscan xml output which is "inspired by"
+        # but not identical to the nmap format. Based on existing code above
+        # for nmap xml files. Also added check for "scanner" attribute to
+        # differentiate between a file from nmap and a file from masscan.
+
+        if root.tag.lower() == "nmaprun" and root.attrib.get('scanner') == 'masscan':
+            print "Detected masscan xml file\n"
+            for item in root.iter('host'):
+                check_ip_address = False
+                # Masscan only includes hosts that are alive, so less checking needed.
+                web_ip_address = None
+                target = item.find('address').get('addr')
+                # find open ports that match the http/https port list or
+                # have http/https as a service
+                for ports in item.iter('port'):
+                    if ports.find('state').get('state') == 'open':
+                        port = ports.attrib.get('portid')
+
+                        # Check for http ports
+                        if int(port) in http_ports:
+                            protocol = 'http'
+                            urlBuild = '%s://%s:%s' % (
+                                protocol, target, port)
+                            if urlBuild not in urls:
+                                urls.append(urlBuild)
+
+                        # Check for https ports
+                        if int(port) in https_ports:
+                            protocol = 'https'
+                            urlBuild = '%s://%s:%s' % (
+                                protocol, target, port)
+                            if urlBuild not in urls:
+                                urls.append(urlBuild)
+
+                        # Check for RDP
+                        if int(port) in rdp_port:
+                            protocol = 'rdp'
+                            if target not in rdp:
+                                rdp.append(target)
+
+                        # Check for VNC
+                        if int(port) in vnc_ports:
+                            protocol = 'vnc'
+                            if target not in vnc:
+                                vnc.append(target)
+
+            if command_line_object.createtargets is not None:
+                with open(command_line_object.createtargets, 'w') as target_file:
+                    for item in urls:
+                        target_file.write(item + '\n')
+                print "Target file created (" + command_line_object.createtargets + ").\n"
+                sys.exit()
+
+            return urls, rdp, vnc
+
         # Find root level if it is nessus output
         # This took a little bit to do, to learn to parse the nessus output.
         # There are a variety of scripts that do it, but also being able to
         # reference PeepingTom really helped.  Tim did a great job figuring
         # out how to parse this file format
         elif root.tag.lower() == "nessusclientdata_v2":
+            print "Detected .Nessus file\n"
             # Find each host in the nessus report
             for host in root.iter("ReportHost"):
                 name = host.get('name')
